@@ -4,6 +4,7 @@ import numpy as np
 import csv
 import os
 import joblib
+import time
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 
@@ -21,6 +22,8 @@ GESTURES = [
 
 CSV_PATH = "gesture_data.csv"
 MODEL_PATH = "gesture_model.pkl"
+
+RECORD_SECONDS = 10
 
 # -----------------------------
 # MEDIAPIPE SETUP
@@ -52,12 +55,15 @@ def flatten(lm):
 # -----------------------------
 def collect_data():
     cap = cv.VideoCapture(0, cv.CAP_DSHOW)    
+    
     current_label = 0
+    recording = False
+    record_start = 0
 
     print("\nControls:")
     for i, g in enumerate(GESTURES):
         print(f"{i} = {g}")
-    print("S = save sample")
+    print("S = start recording 10 seconds")
     print("0-9 = change label")
     print("ESC = exit\n")
 
@@ -88,7 +94,7 @@ def collect_data():
             cv.imshow("Collect Data", frame)
 
             # KEY INPUT ALWAYS HERE
-            key = cv.waitKey(1) & 0xFF
+            key = cv.waitKey(10) & 0xFF
 
             # EXIT
             if key == 27:
@@ -102,10 +108,23 @@ def collect_data():
                     print("Switched to:", GESTURES[current_label])
 
             # SAVE SAMPLE
-            if key == ord('s'):
+            if key == ord('s') and not recording:
+                recording = True
+                record_start = time.time()
+                print("Record started: ", label_name)
+
+            if recording:
+                elapsed = time.time() - record_start
+                remaining = RECORD_SECONDS - elapsed
+
+                cv.putText(frame, "Recording...", (20, 100),
+                    cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+                cv.putText(frame, f"{remaining:.1f}s left", (20, 140),
+                    cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                
                 if results.multi_hand_landmarks:
                     for hand_landmarks in results.multi_hand_landmarks:
-
                         mp_draw.draw_landmarks(
                             frame,
                             hand_landmarks,
@@ -117,7 +136,15 @@ def collect_data():
                         features = flatten(lm)
 
                         writer.writerow([label_name, *features])
-                        print("saved:", label_name)
+
+                if elapsed >= RECORD_SECONDS:
+                    recording = False
+                    print("Recording finished for: ", label_name) 
+
+            cv.putText(frame, f"Label: {label_name}", (20, 50),
+                       cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+            cv.imshow("Collect Data", frame)          
 
     cap.release()
     cv.destroyAllWindows()

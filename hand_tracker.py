@@ -5,7 +5,7 @@ import joblib
 from collections import deque, Counter
 
 # -----------------------------
-# LOAD MODEL (FIXED)
+# LOAD MODEL
 # -----------------------------
 MODEL_PATH = "gesture_model.pkl"
 
