@@ -89,7 +89,7 @@ def main():
             (20, 50),
             cv.FONT_HERSHEY_SIMPLEX,
             1,
-            (0, 255, 0),
+            (0, 0, 0),
             2
         )
 
